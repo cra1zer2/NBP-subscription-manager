@@ -1,0 +1,12 @@
+POST http://localhost:8080/api/v1/subscriptions
+Content-Type: application/json
+
+{
+  "providerName": "Netflix",
+  "amount": 45.00,
+  "currency": "PLN",
+  "nextPaymentDate": "2026-09-01"
+}
+
+###
+GET http://localhost:8080/api/v1/subscriptions
