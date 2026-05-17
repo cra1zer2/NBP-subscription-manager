@@ -19,6 +19,92 @@ This project is meticulously designed following clean code principles, strict DT
 
 ---
 
+## 🏗️ System Architecture
+
+This interactive component diagram represents the complete C4-style architecture of the SubManager system, illustrating the flow from client deployment to the database and external integration layers:
+
+```mermaid
+graph TD
+    %% Ops Block
+    subgraph Ops ["⚙️ Operations & Deployment"]
+        Compose["docker-compose.yml<br/>(Compose Stack Orchestration)"]
+        Dockerfile["Dockerfile<br/>(Multi-Stage Build)"]
+        Config["application.properties<br/>(Runtime Configuration)"]
+        Compose -->|builds| Dockerfile
+        Compose -->|configures| Config
+    end
+
+    %% Runtime Block
+    subgraph Runtime ["☕ Runtime"]
+        Boot["Spring Boot Entrypoint<br/>(SubscriptionmanagerApplication)"]
+    end
+
+    %% API Block
+    subgraph API ["🌐 REST API Layer"]
+        Controller["SubscriptionController<br/>(REST Controller)"]
+        Mapper["SubscriptionMapper<br/>(MapStruct Mapper)"]
+        Handler["GlobalExceptionHandler<br/>(REST Exception Handler)"]
+        ErrorResp["ErrorResponse.java<br/>(API Error Model)"]
+        ReqDTO["SubscriptionRequest<br/>(Request DTO)"]
+        ResDTO["SubscriptionResponse<br/>(Response DTO)"]
+        
+        Controller -->|maps| Mapper
+        Controller -->|handled by| Handler
+        Handler -->|produces| ErrorResp
+        Controller -->|accepts| ReqDTO
+        Controller -->|returns| ResDTO
+    end
+
+    %% Persistence Block
+    subgraph Persistence ["🗄️ Persistence Layer"]
+        ChangelogMaster["db.changelog-master.yaml<br/>(Liquibase Master)"]
+        SchemaMigration["01-init-schema.sql<br/>(Liquibase Changelog)"]
+        Repository["SubscriptionRepository<br/>(JPA Data Access)"]
+        
+        ChangelogMaster -->|includes| SchemaMigration
+        SchemaMigration -->|supports| Repository
+    end
+
+    %% Core Block
+    subgraph Core ["🧠 Core Business Logic"]
+        Service["SubscriptionService<br/>(Business Service)"]
+        Entity["Subscription<br/>(Domain Entity)"]
+        Exception["ResourceNotFoundException<br/>(Domain Exception)"]
+        
+        Service -->|manages| Entity
+        Service -->|throws| Exception
+    end
+
+    %% Integration Block
+    subgraph Integration ["🔌 External Integration"]
+        Client["NbpClient<br/>(Outbound NBP API Client)"]
+    end
+
+    %% Inter-subgraph relations
+    Boot -->|starts| Controller
+    Controller -->|calls| Service
+    Service -->|persists| Repository
+    Repository -->|loads| Entity
+    Client -->|rates| Service
+    
+    %% Styling
+    classDef ops fill:#e1f5fe,stroke:#0288d1,stroke-width:1px;
+    classDef runtime fill:#efebe9,stroke:#5d4037,stroke-width:1px;
+    classDef api fill:#fff3e0,stroke:#f57c00,stroke-width:1px;
+    classDef persistence fill:#fce4ec,stroke:#c2185b,stroke-width:1px;
+    classDef core fill:#e8f5e9,stroke:#388e3c,stroke-width:1px;
+    classDef integration fill:#e8eaf6,stroke:#3f51b5,stroke-width:1px;
+    
+    class Compose,Dockerfile,Config ops;
+    class Boot runtime;
+    class Controller,Mapper,Handler,ErrorResp,ReqDTO,ResDTO api;
+    class ChangelogMaster,SchemaMigration,Repository persistence;
+    class Service,Entity,Exception core;
+    class Client integration;
+```
+
+---
+
 ## 🗄️ Database Schema
 
 The database uses a clean, normalized structure managed dynamically by **Liquibase** migrations:
